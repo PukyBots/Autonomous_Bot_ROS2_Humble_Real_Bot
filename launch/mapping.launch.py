@@ -1,32 +1,174 @@
+# import os
+# from launch import LaunchDescription
+# from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+# from launch.conditions import IfCondition
+# from launch.launch_description_sources import PythonLaunchDescriptionSource
+# from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, Command
+# from launch_ros.actions import Node
+# from ament_index_python.packages import get_package_share_directory
+
+# def generate_launch_description():
+
+#     pkg_diff_drive_robot = get_package_share_directory('diff_drive_robot')
+
+#     gazebo_models_path, ignore_last_dir = os.path.split(pkg_diff_drive_robot)
+#     os.environ["GZ_SIM_RESOURCE_PATH"] += os.pathsep + gazebo_models_path
+
+#     rviz_launch_arg = DeclareLaunchArgument(
+#         'rviz', default_value='true',
+#         description='Open RViz'
+#     )
+
+#     rviz_config_arg = DeclareLaunchArgument(
+#         'rviz_config', default_value='mapping.rviz',
+#         description='RViz config file'
+#     )
+
+#     sim_time_arg = DeclareLaunchArgument(
+#         'use_sim_time', default_value='True',
+#         description='Flag to enable use_sim_time'
+#     )
+
+#     # Path to the Slam Toolbox launch file
+#     slam_toolbox_launch_path = os.path.join(
+#         get_package_share_directory('slam_toolbox'),
+#         'launch',
+#         'online_async_launch.py'
+#     )
+
+#     slam_toolbox_params_path = os.path.join(
+#         get_package_share_directory('diff_drive_robot'),
+#         'config',
+#         'slam_toolbox_mapping.yaml'
+#     )
+
+#     # Launch rviz
+#     rviz_node = Node(
+#         package='rviz2',
+#         executable='rviz2',
+#         arguments=['-d', PathJoinSubstitution([pkg_diff_drive_robot, 'rviz', LaunchConfiguration('rviz_config')])],
+#         condition=IfCondition(LaunchConfiguration('rviz')),
+#         parameters=[
+#             {'use_sim_time': LaunchConfiguration('use_sim_time')},
+#         ]
+#     )
+
+
+#     slam_toolbox_launch = IncludeLaunchDescription(
+#         PythonLaunchDescriptionSource(slam_toolbox_launch_path),
+#         launch_arguments={
+#                 'use_sim_time': LaunchConfiguration('use_sim_time'),
+#                 'slam_params_file': slam_toolbox_params_path,
+#         }.items()
+#     )
+
+#     launchDescriptionObject = LaunchDescription()
+
+#     launchDescriptionObject.add_action(rviz_launch_arg)
+#     launchDescriptionObject.add_action(rviz_config_arg)
+#     launchDescriptionObject.add_action(sim_time_arg)
+#     launchDescriptionObject.add_action(rviz_node)
+#     launchDescriptionObject.add_action(slam_toolbox_launch)
+
+#     return launchDescriptionObject
+
+
+
+
+
 import os
-from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.conditions import IfCondition
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, Command
 from launch_ros.actions import Node
+from launch import LaunchDescription
+from launch.conditions import IfCondition
 from ament_index_python.packages import get_package_share_directory
+from launch.substitutions import LaunchConfiguration
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, GroupAction
 
 def generate_launch_description():
 
-    pkg_diff_drive_robot = get_package_share_directory('diff_drive_robot')
+    # Package name
+    package_name='diff_drive_robot'
 
-    gazebo_models_path, ignore_last_dir = os.path.split(pkg_diff_drive_robot)
-    os.environ["GZ_SIM_RESOURCE_PATH"] += os.pathsep + gazebo_models_path
+    # Launch configurations
+    world = LaunchConfiguration('world')
+    rviz = LaunchConfiguration('rviz')
 
-    rviz_launch_arg = DeclareLaunchArgument(
-        'rviz', default_value='true',
-        description='Open RViz'
+    # Path to default world 
+    world_path = os.path.join(get_package_share_directory(package_name),'worlds', 'obstacles.world')
+
+    # Launch Arguments
+    declare_world = DeclareLaunchArgument(
+        name='world', default_value=world_path,
+        description='Full path to the world model file to load')
+    
+    declare_rviz = DeclareLaunchArgument(
+        name='rviz', default_value='True',
+        description='Opens rviz is set to True')
+
+    # Launch Robot State Publisher Node
+    urdf_path = os.path.join(get_package_share_directory(package_name),'urdf','robot.urdf')
+    rsp = IncludeLaunchDescription(
+                PythonLaunchDescriptionSource([os.path.join(
+                    get_package_share_directory(package_name),'launch','rsp.launch.py'
+                )]), launch_arguments={'use_sim_time': 'true', 'urdf': urdf_path}.items()
     )
 
-    rviz_config_arg = DeclareLaunchArgument(
-        'rviz_config', default_value='mapping.rviz',
-        description='RViz config file'
+    # Launch the gazebo server to initialize the simulation
+    gazebo_server = IncludeLaunchDescription(
+                    PythonLaunchDescriptionSource([os.path.join(
+                        get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py'
+                    )]), launch_arguments={'gz_args': ['-r -s -v1 ', world], 'on_exit_shutdown': 'true'}.items()
     )
 
-    sim_time_arg = DeclareLaunchArgument(
-        'use_sim_time', default_value='True',
-        description='Flag to enable use_sim_time'
+    # Always launch the gazebo client to visualize the simulation
+    gazebo_client = IncludeLaunchDescription(
+                    PythonLaunchDescriptionSource([os.path.join(
+                        get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py'
+                    )]), launch_arguments={'gz_args': '-g '}.items()
+    )
+
+    # Run the spawner node from the gazebo_ros package. 
+    spawn_diff_bot = Node(
+                        package='ros_gz_sim', 
+                        executable='create',
+                        arguments=['-topic', 'robot_description',
+                                   '-name', 'diff_bot',
+                                   '-z', '0.2'],
+                        output='screen'
+    )
+
+    # Launch the Gazebo-ROS bridge
+    bridge_params = os.path.join(get_package_share_directory(package_name),'config','gz_bridge.yaml')
+    ros_gz_bridge = Node(
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        arguments=[
+            '--ros-args',
+            '-p',
+            f'config_file:={bridge_params}',]
+    )
+    
+    # Launch Rviz with diff bot rviz file
+    rviz_config_file = os.path.join(get_package_share_directory(package_name), 'rviz', 'mapping.rviz')
+    rviz2 = GroupAction(
+        condition=IfCondition(rviz),
+        actions=[Node(
+                    package='rviz2',
+                    executable='rviz2',
+                    arguments=['-d', rviz_config_file],
+                    output='screen',)]
+    )
+
+    ekf_node = Node(
+        package='robot_localization',
+        executable='ekf_node',
+        name='ekf_filter_node',
+        output='screen',
+        parameters=[
+            os.path.join(get_package_share_directory(package_name), 'config', 'ekf.yaml'),
+            {'use_sim_time': LaunchConfiguration('use_sim_time')},
+             ]
     )
 
     # Path to the Slam Toolbox launch file
@@ -42,17 +184,6 @@ def generate_launch_description():
         'slam_toolbox_mapping.yaml'
     )
 
-    # Launch rviz
-    rviz_node = Node(
-        package='rviz2',
-        executable='rviz2',
-        arguments=['-d', PathJoinSubstitution([pkg_diff_drive_robot, 'rviz', LaunchConfiguration('rviz_config')])],
-        condition=IfCondition(LaunchConfiguration('rviz')),
-        parameters=[
-            {'use_sim_time': LaunchConfiguration('use_sim_time')},
-        ]
-    )
-
 
     slam_toolbox_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(slam_toolbox_launch_path),
@@ -62,12 +193,20 @@ def generate_launch_description():
         }.items()
     )
 
-    launchDescriptionObject = LaunchDescription()
 
-    launchDescriptionObject.add_action(rviz_launch_arg)
-    launchDescriptionObject.add_action(rviz_config_arg)
-    launchDescriptionObject.add_action(sim_time_arg)
-    launchDescriptionObject.add_action(rviz_node)
-    launchDescriptionObject.add_action(slam_toolbox_launch)
+    # Launch them all!
+    return LaunchDescription([
+        # Declare launch arguments
+        declare_rviz,
+        declare_world,
 
-    return launchDescriptionObject
+        # Launch the nodes
+        rsp,
+        gazebo_server,
+        gazebo_client,
+        ros_gz_bridge,
+        spawn_diff_bot,
+        ekf_node,
+        slam_toolbox_launch,
+        rviz2,
+    ])

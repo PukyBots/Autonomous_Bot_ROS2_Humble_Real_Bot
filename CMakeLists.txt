@@ -12,8 +12,26 @@ find_package(ament_cmake REQUIRED)
 # find_package(<dependency> REQUIRED)
 
 install(
-  DIRECTORY launch urdf config worlds rviz
+  DIRECTORY launch urdf config worlds rviz 
   DESTINATION share/${PROJECT_NAME}
+)
+
+install(
+  PROGRAMS
+    scripts/marker_publisher.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+  PROGRAMS
+    scripts/interactive_points.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+  PROGRAMS
+    scripts/load_points.py
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)

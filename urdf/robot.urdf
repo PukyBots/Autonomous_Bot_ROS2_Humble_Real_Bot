@@ -4,12 +4,15 @@
     <xacro:include filename="$(find diff_drive_robot)/urdf/robot.gazebo" />
 
     <xacro:include filename="inertial_macros.xacro" />
-    
+  
+
+
     <!-- Base link -->
 
-    <link name="base_link">
+  <link name="base_link">
+    <!-- visuals / collisions / inertial -->
+  </link>
 
-    </link>
 
     <!-- Chassis link -->
 

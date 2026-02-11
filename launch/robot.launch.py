@@ -17,7 +17,7 @@ def generate_launch_description():
     rviz = LaunchConfiguration('rviz')
 
     # Path to default world 
-    world_path = os.path.join(get_package_share_directory(package_name),'worlds', 'world.sdf')
+    world_path = os.path.join(get_package_share_directory(package_name),'worlds', 'obstacles.world')
 
     # Launch Arguments
     declare_world = DeclareLaunchArgument(
@@ -93,6 +93,8 @@ def generate_launch_description():
              ]
     )
 
+
+
     # Launch them all!
     return LaunchDescription([
         # Declare launch arguments
@@ -100,11 +102,12 @@ def generate_launch_description():
         declare_world,
 
         # Launch the nodes
-        # rviz2,
+        rviz2,
         rsp,
         gazebo_server,
         gazebo_client,
         ros_gz_bridge,
         spawn_diff_bot,
         ekf_node,
+    
     ])
