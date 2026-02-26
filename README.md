@@ -1,6 +1,6 @@
 # Simulated Robots Package
 
-Simulation for differential drive robots using ROS2 Jazzy and Gazebo Harmonic. This package provides all of the necessary files to get a simulated robot up and running. This includes the urdf, parameters and launch files for a robot with a lidar sensor and tele-operated navigation. More sensors and functionalities will be added in future.
+Simulation for differential drive robots using ROS2 HUmble and Real Robot. This package provides all of the necessary files to get a simulated robot up and running. This includes the urdf, parameters and launch files for a robot with a lidar sensor and tele-operated navigation. More sensors and functionalities will be added in future.
 
 
 <p align="center">
@@ -8,52 +8,10 @@ Simulation for differential drive robots using ROS2 Jazzy and Gazebo Harmonic. T
 </p>
 
 
-## Branches
-
-This repository has two main branches:
-
-- **`main`**: Base repository with core robot simulation functionality including URDF, Gazebo simulation, and basic tele-operation
-- **`mapping`**: Extended branch that adds mapping capabilities using SLAM Toolbox and robot localization with Extended Kalman Filter (EKF)
-
-## Work in progress
-
-The package is still being worked on and in development
-
-## Supported on
-
-Supported for [Ubuntu 24.04](https://releases.ubuntu.com/noble/) & [ROS2 Jazzy](https://docs.ros.org/en/jazzy/Installation.html) but compatibility with other versions has not been checked.
-
-## Install Required ROS 2 Packages
-
-### Base Packages (Required for all branches)
-
-Make sure to install the following ROS 2 Jazzy Packages:
-
-```bash
-sudo apt install -y                         \
-   ros-jazzy-ros-gz                        \
-   ros-jazzy-ros-gz-bridge                 \
-   ros-jazzy-joint-state-publisher         \
-   ros-jazzy-xacro                         \
-   ros-jazzy-teleop-twist-keyboard         \
-   ros-jazzy-teleop-twist-joy 
-```
-
-### Additional Packages (Required for `mapping` branch)
-
-If you're using the `mapping` branch, also install:
-
-```bash
-sudo apt install -y                         \
-   ros-jazzy-slam-toolbox                  \
-   ros-jazzy-robot-localization
-```
 
 ## Install
 
 To use this package please download all of the necessary dependencies first and then follow these steps:
-
-### Main Branch
 
 For the base robot simulation, clone the main branch:
 

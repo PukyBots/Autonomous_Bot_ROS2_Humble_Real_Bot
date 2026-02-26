@@ -108,7 +108,6 @@ class OdomNode(Node):
         tf.transform.translation.z = 0.0
         tf.transform.rotation.z = qz
         tf.transform.rotation.w = qw
-        self.tf_broadcaster.sendTransform(tf)
 
         # ---------------- odometry ----------------
         odom = Odometry()

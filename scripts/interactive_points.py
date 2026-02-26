@@ -49,7 +49,7 @@ class InteractivePoints(Node):
 
         self.pub = self.create_publisher(
             MarkerArray,
-            '/points',
+            '/interactive_points',
             10
         )
 
